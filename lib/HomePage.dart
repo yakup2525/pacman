@@ -522,11 +522,11 @@ class _HomePageState extends State<HomePage> {
                   return const MyPlayer();
               }
             } else if (ghost == index) {
-              return BlueGhost();
+              return const BlueGhost();
             } else if (ghost2 == index) {
-              return RedGhost();
+              return const RedGhost();
             } else if (ghost3 == index) {
-              return MyGhost3();
+              return const YellowGhost();
             } else if (barriers.contains(index)) {
               return Barrier(
                 barrierColor: Colors.blue.shade800,
