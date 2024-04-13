@@ -301,7 +301,7 @@ class _GamePageState extends State<GamePage> {
     while (!moved) {
       List<String> possibleDirections = [];
 
-      // Mevcut yönü %95 olasılıkla koru, %3 olasılıkla geri dönmeyi seç
+      // Mevcut yönu %95 olasılıkla koru, %3 olasılıkla geri dönmeyi sec
       if (random.nextDouble() > 0.03) {
         possibleDirections.add(ghostLast);
       } else {
@@ -349,7 +349,7 @@ class _GamePageState extends State<GamePage> {
       bool canGoDown = !_barriers.contains(ghost + _numberInRow);
 
       // Yan yönler varsa, %30 olasılıkla bu yönleri tercih et
-      // Yan yönler tercih edilmiyorsa veya mümkün değilse, diğer yönleri ekle
+      // Yan yönler tercih edilmiyorsa veya mumkun değilse, diğer yönleri ekle
 
       if (canGoLeft && random.nextDouble() < 0.3) {
         possibleDirections.add("left");
@@ -364,7 +364,7 @@ class _GamePageState extends State<GamePage> {
         possibleDirections.add("down");
       }
 
-      // Hareket etmek için mümkün yönlerden birini seç
+      // Hareket etmek icin mumkun yönlerden birini sec
       if (possibleDirections.isNotEmpty) {
         newGhostLast = possibleDirections[random.nextInt(possibleDirections.length)];
       }

@@ -8,8 +8,15 @@ class Barrier extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(0.0),
-      child: Image.asset('assets/images/barrier.png'),
+      padding: const EdgeInsets.all(1.0),
+      child: Container(
+        color: Colors.blue,
+      ),
     );
+
+    // Padding(
+    //   padding: const EdgeInsets.all(0.0),
+    //   child: Image.asset('assets/images/barrier.png'),
+    // );
   }
 }
