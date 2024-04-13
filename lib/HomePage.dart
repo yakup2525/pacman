@@ -564,35 +564,19 @@ class _HomePageState extends State<HomePage> {
               onTap: startGame,
               child: const Text("P L A Y", style: TextStyle(color: Colors.white, fontSize: 23)),
             ),
-            if (!paused)
-              GestureDetector(
-                child: const Icon(
-                  Icons.pause,
-                  color: Colors.white,
-                ),
-                onTap: () => {
-                  if (!paused)
-                    {
-                      paused = true,
-                    }
-                  else
-                    {
-                      paused = false,
-                    },
-                  const Icon(
-                    Icons.play_arrow,
-                    color: Colors.white,
-                  )
-                },
+            GestureDetector(
+              child: Icon(
+                paused ? Icons.play_arrow : Icons.pause,
+                color: paused ? const Color.fromARGB(255, 201, 148, 148) : Colors.white,
               ),
-            if (paused)
-              GestureDetector(
-                child: const Icon(
-                  Icons.play_arrow,
-                  color: Colors.white,
-                ),
-                onTap: () {},
-              ),
+              onTap: () {
+                if (!paused) {
+                  paused = true;
+                } else {
+                  paused = false;
+                }
+              },
+            ),
           ],
         ),
       ),
