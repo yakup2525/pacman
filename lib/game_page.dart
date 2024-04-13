@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:pacman/ghost.dart';
 import 'package:pacman/ghost2.dart';
@@ -8,27 +5,34 @@ import 'package:pacman/ghost3.dart';
 import 'package:pacman/path.dart';
 import 'package:pacman/barrier.dart';
 import 'package:pacman/player.dart';
+import 'dart:async';
+import 'dart:math';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class GamePage extends StatefulWidget {
+  const GamePage({super.key});
 
   @override
-  _HomePageState createState() => _HomePageState();
+  State<GamePage> createState() => _GamePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  static int numberInRow = 11;
-  int numberOfSquares = numberInRow * 18;
-  int player = numberInRow * 14 + 1;
-  int ghost = numberInRow * 2 - 2;
-  int ghost2 = numberInRow * 9 - 8;
-  int ghost3 = numberInRow * 11 - 2;
-  bool preGame = true;
-  bool mouthClosed = false;
-  int score = 0;
-  bool paused = false;
+class _GamePageState extends State<GamePage> {
+  static const int _numberInRow = 11;
+  final int _numberOfSquares = _numberInRow * 18;
+  int _player = _numberInRow * 14 + 1;
+  int _ghost = _numberInRow * 2 - 2;
+  int _ghost2 = _numberInRow * 9 - 8;
+  int _ghost3 = _numberInRow * 11 - 2;
+  bool _preGame = true;
+  bool _mouthClosed = false;
+  int _score = 0;
+  bool _paused = false;
+  final List<int> _food = [];
+  String _direction = "right";
+  String _ghostLast = "left";
+  String _ghostLast2 = "left";
+  String _ghostLast3 = "down";
 
-  List<int> barriers = [
+  final List<int> _barriers = [
     0,
     1,
     2,
@@ -136,21 +140,16 @@ class _HomePageState extends State<HomePage> {
     197,
   ];
 
-  List<int> food = [];
-  String direction = "right";
-  String ghostLast = "left";
-  String ghostLast2 = "left";
-  String ghostLast3 = "down";
-
-  void startGame() {
-    if (preGame) {
-      preGame = false;
-      getFood();
+// Functions
+  void _startGame() {
+    if (_preGame) {
+      _preGame = false;
+      _getFood();
 
       Timer.periodic(const Duration(milliseconds: 10), (timer) {
-        if (player == ghost || player == ghost2 || player == ghost3) {
+        if (_player == _ghost || _player == _ghost2 || _player == _ghost3) {
           setState(() {
-            player = -1;
+            _player = -1;
           });
           showDialog(
               barrierDismissible: false,
@@ -158,22 +157,22 @@ class _HomePageState extends State<HomePage> {
               builder: (BuildContext context) {
                 return AlertDialog(
                   title: const Center(child: Text("Game Over!")),
-                  content: Text("Your Score :  $score"),
+                  content: Text("Your Score :  $_score"),
                   actions: [
                     MaterialButton(
                       onPressed: () {
                         setState(() {
-                          player = numberInRow * 14 + 1;
-                          ghost = numberInRow * 2 - 2;
-                          ghost2 = numberInRow * 9 - 1;
-                          ghost3 = numberInRow * 11 - 2;
-                          paused = false;
-                          preGame = false;
-                          mouthClosed = false;
-                          direction = "right";
-                          food.clear();
-                          getFood();
-                          score = 0;
+                          _player = _numberInRow * 14 + 1;
+                          _ghost = _numberInRow * 2 - 2;
+                          _ghost2 = _numberInRow * 9 - 1;
+                          _ghost3 = _numberInRow * 11 - 2;
+                          _paused = false;
+                          _preGame = false;
+                          _mouthClosed = false;
+                          _direction = "right";
+                          _food.clear();
+                          _getFood();
+                          _score = 0;
                           Navigator.pop(context);
                         });
                       },
@@ -203,101 +202,97 @@ class _HomePageState extends State<HomePage> {
         }
       });
       Timer.periodic(const Duration(milliseconds: 190), (timer) {
-        if (!paused) {
-          moveGhost(ghost, ghostLast, (newGhost, newGhostlast) {
+        if (!_paused) {
+          _moveGhost(_ghost, _ghostLast, (newGhost, newGhostlast) {
             setState(() {
-              ghost = newGhost;
-              ghostLast = newGhostlast;
+              _ghost = newGhost;
+              _ghostLast = newGhostlast;
             });
           });
-          moveGhost(ghost2, ghostLast2, (newGhost2, newGhostlast2) {
+          _moveGhost(_ghost2, _ghostLast2, (newGhost2, newGhostlast2) {
             setState(() {
-              ghost2 = newGhost2;
-              ghostLast2 = newGhostlast2;
+              _ghost2 = newGhost2;
+              _ghostLast2 = newGhostlast2;
             });
           });
-          moveGhost(ghost3, ghostLast3, (newGhost3, newGhostlast3) {
+          _moveGhost(_ghost3, _ghostLast3, (newGhost3, newGhostlast3) {
             setState(() {
-              ghost3 = newGhost3;
-              ghostLast3 = newGhostlast3;
+              _ghost3 = newGhost3;
+              _ghostLast3 = newGhostlast3;
             });
           }, dontFollow: true);
         }
       });
       Timer.periodic(const Duration(milliseconds: 170), (timer) {
         setState(() {
-          mouthClosed = !mouthClosed;
+          _mouthClosed = !_mouthClosed;
         });
-        if (food.contains(player)) {
+        if (_food.contains(_player)) {
           setState(() {
-            food.remove(player);
+            _food.remove(_player);
           });
-          score++;
+          _score++;
         }
 
-        switch (direction) {
+        switch (_direction) {
           case "left":
-            if (!paused) moveLeft();
+            if (!_paused) _moveLeft();
             break;
           case "right":
-            if (!paused) moveRight();
+            if (!_paused) _moveRight();
             break;
           case "up":
-            if (!paused) moveUp();
+            if (!_paused) _moveUp();
             break;
           case "down":
-            if (!paused) moveDown();
+            if (!_paused) _moveDown();
             break;
         }
       });
     }
   }
 
-  void restart() {
-    startGame();
-  }
-
-  void getFood() {
-    for (int i = 0; i < numberOfSquares; i++) {
-      if (!barriers.contains(i)) {
-        food.add(i);
+  void _getFood() {
+    for (int i = 0; i < _numberOfSquares; i++) {
+      if (!_barriers.contains(i)) {
+        _food.add(i);
       }
     }
   }
 
-  void moveLeft() {
-    if (!barriers.contains(player - 1)) {
+  void _moveLeft() {
+    if (!_barriers.contains(_player - 1)) {
       setState(() {
-        player--;
+        _player--;
       });
     }
   }
 
-  void moveRight() {
-    if (!barriers.contains(player + 1)) {
+  void _moveRight() {
+    if (!_barriers.contains(_player + 1)) {
       setState(() {
-        player++;
+        _player++;
       });
     }
   }
 
-  void moveUp() {
-    if (!barriers.contains(player - numberInRow)) {
+  void _moveUp() {
+    if (!_barriers.contains(_player - _numberInRow)) {
       setState(() {
-        player -= numberInRow;
+        _player -= _numberInRow;
       });
     }
   }
 
-  void moveDown() {
-    if (!barriers.contains(player + numberInRow)) {
+  void _moveDown() {
+    if (!_barriers.contains(_player + _numberInRow)) {
       setState(() {
-        player += numberInRow;
+        _player += _numberInRow;
       });
     }
   }
 
-  void moveGhost(int ghost, String ghostLast, Function(int, String) updateState, {bool dontFollow = false}) {
+  void _moveGhost(int ghost, String ghostLast, Function(int, String) updateState, {bool dontFollow = false}) {
     Random random = Random();
     String newGhostLast = ghostLast;
     int newGhost = ghost;
@@ -328,16 +323,16 @@ class _HomePageState extends State<HomePage> {
 
       if (!dontFollow) {
         if (random.nextDouble() < 0.7) {
-          if (player < 100) {
+          if (_player < 100) {
             possibleDirections.add("up");
           } else {
             possibleDirections.add("down");
           }
         }
 
-        final playerPos = player.toString();
+        final playerPos = _player.toString();
         if (playerPos.length == 2) {
-          if (player > 10 && random.nextDouble() < 0.7) {
+          if (_player > 10 && random.nextDouble() < 0.7) {
             if (int.parse(playerPos[1]) - int.parse(playerPos[1]) < 6) {
               possibleDirections.add("left");
             } else {
@@ -348,16 +343,12 @@ class _HomePageState extends State<HomePage> {
       }
 
       // Yan yönleri kontrol et
-      bool canGoLeft = !barriers.contains(ghost - 1);
-      bool canGoRight = !barriers.contains(ghost + 1);
-      bool canGoUp = !barriers.contains(ghost - numberInRow);
-      bool canGoDown = !barriers.contains(ghost + numberInRow);
+      bool canGoLeft = !_barriers.contains(ghost - 1);
+      bool canGoRight = !_barriers.contains(ghost + 1);
+      bool canGoUp = !_barriers.contains(ghost - _numberInRow);
+      bool canGoDown = !_barriers.contains(ghost + _numberInRow);
 
       // Yan yönler varsa, %30 olasılıkla bu yönleri tercih et
-      // if ((canGoLeft || canGoRight) && random.nextDouble() < 0.3) {
-      //   if (canGoLeft) possibleDirections.add("left");
-      //   if (canGoRight) possibleDirections.add("right");
-      // }
       // Yan yönler tercih edilmiyorsa veya mümkün değilse, diğer yönleri ekle
 
       if (canGoLeft && random.nextDouble() < 0.3) {
@@ -393,13 +384,13 @@ class _HomePageState extends State<HomePage> {
           break;
         case "up":
           if (canGoUp) {
-            newGhost -= numberInRow;
+            newGhost -= _numberInRow;
             moved = true;
           }
           break;
         case "down":
           if (canGoDown) {
-            newGhost += numberInRow;
+            newGhost += _numberInRow;
             moved = true;
           }
           break;
@@ -408,53 +399,7 @@ class _HomePageState extends State<HomePage> {
 
     updateState(newGhost, newGhostLast);
   }
-
-  // void moveGhost(
-  //     int ghost, String ghostLast, Function(int, String) updateState) {
-  //   Random random = Random();
-  //   List<String> directions = ["left", "right", "up", "down"];
-  //   String newGhostLast = ghostLast;
-  //   int newGhost = ghost;
-  //   bool moved = false;
-
-  //   while (!moved) {
-  //     // Mevcut yönü %70 olasılıkla koru, %30 olasılıkla rastgele yeni bir yön seç
-  //     if (random.nextDouble() > 0.3) {
-  //       newGhostLast = ghostLast;
-  //     } else {
-  //       newGhostLast = directions[random.nextInt(directions.length)];
-  //     }
-
-  //     switch (newGhostLast) {
-  //       case "left":
-  //         if (!barriers.contains(ghost - 1)) {
-  //           newGhost--;
-  //           moved = true;
-  //         }
-  //         break;
-  //       case "right":
-  //         if (!barriers.contains(ghost + 1)) {
-  //           newGhost++;
-  //           moved = true;
-  //         }
-  //         break;
-  //       case "up":
-  //         if (!barriers.contains(ghost - numberInRow)) {
-  //           newGhost -= numberInRow;
-  //           moved = true;
-  //         }
-  //         break;
-  //       case "down":
-  //         if (!barriers.contains(ghost + numberInRow)) {
-  //           newGhost += numberInRow;
-  //           moved = true;
-  //         }
-  //         break;
-  //     }
-  //   }
-
-  //   updateState(newGhost, newGhostLast);
-  // }
+//
 
   @override
   Widget build(BuildContext context) {
@@ -471,36 +416,37 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+//UI
   Widget _gameMap(BuildContext context) {
     return Expanded(
       flex: 6,
       child: GestureDetector(
         onVerticalDragUpdate: (details) {
           if (details.delta.dy > 0) {
-            direction = "down";
+            _direction = "down";
           } else if (details.delta.dy < 0) {
-            direction = "up";
+            _direction = "up";
           }
         },
         onHorizontalDragUpdate: (details) {
           if (details.delta.dx > 0) {
-            direction = "right";
+            _direction = "right";
           } else if (details.delta.dx < 0) {
-            direction = "left";
+            _direction = "left";
           }
         },
         child: GridView.builder(
           padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: numberOfSquares,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: numberInRow),
+          itemCount: _numberOfSquares,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _numberInRow),
           itemBuilder: (BuildContext context, int index) {
-            if (mouthClosed && player == index) {
+            if (_mouthClosed && _player == index) {
               return Container(
                 decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
               );
-            } else if (player == index) {
-              switch (direction) {
+            } else if (_player == index) {
+              switch (_direction) {
                 case "left":
                   return Transform.rotate(
                     angle: pi,
@@ -521,17 +467,17 @@ class _HomePageState extends State<HomePage> {
                 default:
                   return const MyPlayer();
               }
-            } else if (ghost == index) {
+            } else if (_ghost == index) {
               return const BlueGhost();
-            } else if (ghost2 == index) {
+            } else if (_ghost2 == index) {
               return const RedGhost();
-            } else if (ghost3 == index) {
+            } else if (_ghost3 == index) {
               return const YellowGhost();
-            } else if (barriers.contains(index)) {
+            } else if (_barriers.contains(index)) {
               return Barrier(
                 barrierColor: Colors.blue.shade800,
               );
-            } else if (preGame || food.contains(index)) {
+            } else if (_preGame || _food.contains(index)) {
               return const Path(
                 innerColor: Colors.yellow,
                 outerColor: Colors.black,
@@ -557,23 +503,23 @@ class _HomePageState extends State<HomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Text(
-              " Score : $score",
+              " Score : $_score",
               style: const TextStyle(color: Colors.white, fontSize: 23),
             ),
             GestureDetector(
-              onTap: startGame,
+              onTap: _startGame,
               child: const Text("P L A Y", style: TextStyle(color: Colors.white, fontSize: 23)),
             ),
             GestureDetector(
               child: Icon(
-                paused ? Icons.play_arrow : Icons.pause,
-                color: paused ? const Color.fromARGB(255, 201, 148, 148) : Colors.white,
+                _paused ? Icons.play_arrow : Icons.pause,
+                color: _paused ? const Color.fromARGB(255, 201, 148, 148) : Colors.white,
               ),
               onTap: () {
-                if (!paused) {
-                  paused = true;
+                if (!_paused) {
+                  _paused = true;
                 } else {
-                  paused = false;
+                  _paused = false;
                 }
               },
             ),
@@ -582,4 +528,5 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+//
 }
