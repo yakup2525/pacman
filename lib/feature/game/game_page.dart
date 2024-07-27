@@ -136,6 +136,138 @@ class _GamePageState extends State<GamePage> {
     197,
   ];
 
+
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Column(
+          children: [
+            _gameMap(context),
+            _dashboard(),
+          ],
+        ),
+      ),
+    );
+  }
+
+//UI
+  Widget _gameMap(BuildContext context) {
+    return Expanded(
+      flex: 6,
+      child: GestureDetector(
+        onVerticalDragUpdate: (details) {
+          if (details.delta.dy > 0) {
+            _direction = "down";
+          } else if (details.delta.dy < 0) {
+            _direction = "up";
+          }
+        },
+        onHorizontalDragUpdate: (details) {
+          if (details.delta.dx > 0) {
+            _direction = "right";
+          } else if (details.delta.dx < 0) {
+            _direction = "left";
+          }
+        },
+        child: GridView.builder(
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _numberOfSquares,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _numberInRow),
+          itemBuilder: (BuildContext context, int index) {
+            if (_mouthClosed && _player == index) {
+              return Container(
+                decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
+              );
+            } else if (_player == index) {
+              switch (_direction) {
+                case "left":
+                  return Transform.rotate(
+                    angle: pi,
+                    child: const MyPlayer(),
+                  );
+                case "right":
+                  return const MyPlayer();
+                case "up":
+                  return Transform.rotate(
+                    angle: 3 * pi / 2,
+                    child: const MyPlayer(),
+                  );
+                case "down":
+                  return Transform.rotate(
+                    angle: pi / 2,
+                    child: const MyPlayer(),
+                  );
+                default:
+                  return const MyPlayer();
+              }
+            } else if (_ghost == index) {
+              return const BlueGhost();
+            } else if (_ghost2 == index) {
+              return const RedGhost();
+            } else if (_ghost3 == index) {
+              return const YellowGhost();
+            } else if (_barriers.contains(index)) {
+              return Barrier(
+                barrierColor: Colors.blue.shade800,
+              );
+            } else if (_preGame || _food.contains(index)) {
+              return const Path(
+                innerColor: Colors.yellow,
+                outerColor: Colors.black,
+                child: SizedBox(),
+              );
+            } else {
+              return const Path(
+                innerColor: Colors.black,
+                outerColor: Colors.black,
+                child: SizedBox(),
+              );
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Expanded _dashboard() {
+    return Expanded(
+      child: SizedBox(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Text(
+              " Score : $_score",
+              style: const TextStyle(color: Colors.white, fontSize: 23),
+            ),
+            GestureDetector(
+              onTap: _startGame,
+              child: const Text("P L A Y", style: TextStyle(color: Colors.white, fontSize: 23)),
+            ),
+            GestureDetector(
+              child: Icon(
+                _paused ? Icons.play_arrow : Icons.pause,
+                color: _paused ? const Color.fromARGB(255, 201, 148, 148) : Colors.white,
+              ),
+              onTap: () {
+                if (!_paused) {
+                  _paused = true;
+                } else {
+                  _paused = false;
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+//
+
+
 // Functions
   void _startGame() {
     if (_preGame) {
@@ -397,132 +529,4 @@ class _GamePageState extends State<GamePage> {
   }
 //
 
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Column(
-          children: [
-            _gameMap(context),
-            _dashboard(),
-          ],
-        ),
-      ),
-    );
-  }
-
-//UI
-  Widget _gameMap(BuildContext context) {
-    return Expanded(
-      flex: 6,
-      child: GestureDetector(
-        onVerticalDragUpdate: (details) {
-          if (details.delta.dy > 0) {
-            _direction = "down";
-          } else if (details.delta.dy < 0) {
-            _direction = "up";
-          }
-        },
-        onHorizontalDragUpdate: (details) {
-          if (details.delta.dx > 0) {
-            _direction = "right";
-          } else if (details.delta.dx < 0) {
-            _direction = "left";
-          }
-        },
-        child: GridView.builder(
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _numberOfSquares,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _numberInRow),
-          itemBuilder: (BuildContext context, int index) {
-            if (_mouthClosed && _player == index) {
-              return Container(
-                decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
-              );
-            } else if (_player == index) {
-              switch (_direction) {
-                case "left":
-                  return Transform.rotate(
-                    angle: pi,
-                    child: const MyPlayer(),
-                  );
-                case "right":
-                  return const MyPlayer();
-                case "up":
-                  return Transform.rotate(
-                    angle: 3 * pi / 2,
-                    child: const MyPlayer(),
-                  );
-                case "down":
-                  return Transform.rotate(
-                    angle: pi / 2,
-                    child: const MyPlayer(),
-                  );
-                default:
-                  return const MyPlayer();
-              }
-            } else if (_ghost == index) {
-              return const BlueGhost();
-            } else if (_ghost2 == index) {
-              return const RedGhost();
-            } else if (_ghost3 == index) {
-              return const YellowGhost();
-            } else if (_barriers.contains(index)) {
-              return Barrier(
-                barrierColor: Colors.blue.shade800,
-              );
-            } else if (_preGame || _food.contains(index)) {
-              return const Path(
-                innerColor: Colors.yellow,
-                outerColor: Colors.black,
-                child: SizedBox(),
-              );
-            } else {
-              return const Path(
-                innerColor: Colors.black,
-                outerColor: Colors.black,
-                child: SizedBox(),
-              );
-            }
-          },
-        ),
-      ),
-    );
-  }
-
-  Expanded _dashboard() {
-    return Expanded(
-      child: SizedBox(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(
-              " Score : $_score",
-              style: const TextStyle(color: Colors.white, fontSize: 23),
-            ),
-            GestureDetector(
-              onTap: _startGame,
-              child: const Text("P L A Y", style: TextStyle(color: Colors.white, fontSize: 23)),
-            ),
-            GestureDetector(
-              child: Icon(
-                _paused ? Icons.play_arrow : Icons.pause,
-                color: _paused ? const Color.fromARGB(255, 201, 148, 148) : Colors.white,
-              ),
-              onTap: () {
-                if (!_paused) {
-                  _paused = true;
-                } else {
-                  _paused = false;
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-//
 }
