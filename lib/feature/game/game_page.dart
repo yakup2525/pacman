@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pacman/ghost.dart';
-import 'package:pacman/ghost2.dart';
-import 'package:pacman/ghost3.dart';
-import 'package:pacman/path.dart';
-import 'package:pacman/barrier.dart';
-import 'package:pacman/player.dart';
+import '/feature/feature.dart';
 import 'dart:async';
 import 'dart:math';
 
