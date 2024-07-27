@@ -11,10 +11,11 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-
 class _GamePageState extends State<GamePage> {
   static const int _numberInRow = 11;
   final int _numberOfSquares = _numberInRow * 18;
+
+  late double _mapWidth;
   int _player = _numberInRow * 14 + 1;
   int _ghost = _numberInRow * 2 - 2;
   int _ghost2 = _numberInRow * 9 - 8;
@@ -29,8 +30,13 @@ class _GamePageState extends State<GamePage> {
   String _ghostLast2 = "left";
   String _ghostLast3 = "down";
 
- List<int> _barriers =Level1.barriers;
+  List<int> _barriers = Level1.barriers;
 
+  @override
+  void initState() {
+    _mapWidth = (MediaQuery.of(context).size.height * 6 / 7 - 19) / 18 * 11;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,77 +57,83 @@ class _GamePageState extends State<GamePage> {
   Widget _gameMap(BuildContext context) {
     return Expanded(
       flex: 6,
-      child: GestureDetector(
-        onVerticalDragUpdate: (details) {
-          if (details.delta.dy > 0) {
-            _direction = "down";
-          } else if (details.delta.dy < 0) {
-            _direction = "up";
-          }
-        },
-        onHorizontalDragUpdate: (details) {
-          if (details.delta.dx > 0) {
-            _direction = "right";
-          } else if (details.delta.dx < 0) {
-            _direction = "left";
-          }
-        },
-        child: GridView.builder(
-          padding: EdgeInsets.zero,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _numberOfSquares,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: _numberInRow),
-          itemBuilder: (BuildContext context, int index) {
-            if (_mouthClosed && _player == index) {
-              return Container(
-                decoration: const BoxDecoration(color: Colors.yellow, shape: BoxShape.circle),
-              );
-            } else if (_player == index) {
-              switch (_direction) {
-                case "left":
-                  return Transform.rotate(
-                    angle: pi,
-                    child: const MyPlayer(),
-                  );
-                case "right":
-                  return const MyPlayer();
-                case "up":
-                  return Transform.rotate(
-                    angle: 3 * pi / 2,
-                    child: const MyPlayer(),
-                  );
-                case "down":
-                  return Transform.rotate(
-                    angle: pi / 2,
-                    child: const MyPlayer(),
-                  );
-                default:
-                  return const MyPlayer();
-              }
-            } else if (_ghost == index) {
-              return const BlueGhost();
-            } else if (_ghost2 == index) {
-              return const RedGhost();
-            } else if (_ghost3 == index) {
-              return const YellowGhost();
-            } else if (_barriers.contains(index)) {
-              return Barrier(
-                barrierColor: Colors.blue.shade800,
-              );
-            } else if (_preGame || _food.contains(index)) {
-              return const Path(
-                innerColor: Colors.yellow,
-                outerColor: Colors.black,
-                child: SizedBox(),
-              );
-            } else {
-              return const Path(
-                innerColor: Colors.black,
-                outerColor: Colors.black,
-                child: SizedBox(),
-              );
+      child: SizedBox(
+        width: _mapWidth,
+        child: GestureDetector(
+          onVerticalDragUpdate: (details) {
+            if (details.delta.dy > 0) {
+              _direction = "down";
+            } else if (details.delta.dy < 0) {
+              _direction = "up";
             }
           },
+          onHorizontalDragUpdate: (details) {
+            if (details.delta.dx > 0) {
+              _direction = "right";
+            } else if (details.delta.dx < 0) {
+              _direction = "left";
+            }
+          },
+          child: GridView.builder(
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _numberOfSquares,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: _numberInRow,
+            ),
+            itemBuilder: (BuildContext context, int index) {
+              if (_mouthClosed && _player == index) {
+                return Container(
+                  decoration: const BoxDecoration(
+                      color: Colors.yellow, shape: BoxShape.circle),
+                );
+              } else if (_player == index) {
+                switch (_direction) {
+                  case "left":
+                    return Transform.rotate(
+                      angle: pi,
+                      child: const MyPlayer(),
+                    );
+                  case "right":
+                    return const MyPlayer();
+                  case "up":
+                    return Transform.rotate(
+                      angle: 3 * pi / 2,
+                      child: const MyPlayer(),
+                    );
+                  case "down":
+                    return Transform.rotate(
+                      angle: pi / 2,
+                      child: const MyPlayer(),
+                    );
+                  default:
+                    return const MyPlayer();
+                }
+              } else if (_ghost == index) {
+                return const BlueGhost();
+              } else if (_ghost2 == index) {
+                return const RedGhost();
+              } else if (_ghost3 == index) {
+                return const YellowGhost();
+              } else if (_barriers.contains(index)) {
+                return Barrier(
+                  barrierColor: Colors.blue.shade800,
+                );
+              } else if (_preGame || _food.contains(index)) {
+                return const Path(
+                  innerColor: Colors.yellow,
+                  outerColor: Colors.black,
+                  child: SizedBox(),
+                );
+              } else {
+                return const Path(
+                  innerColor: Colors.black,
+                  outerColor: Colors.black,
+                  child: SizedBox(),
+                );
+              }
+            },
+          ),
         ),
       ),
     );
@@ -139,12 +151,15 @@ class _GamePageState extends State<GamePage> {
             ),
             GestureDetector(
               onTap: _startGame,
-              child: const Text("P L A Y", style: TextStyle(color: Colors.white, fontSize: 23)),
+              child: const Text("P L A Y",
+                  style: TextStyle(color: Colors.white, fontSize: 23)),
             ),
             GestureDetector(
               child: Icon(
                 _paused ? Icons.play_arrow : Icons.pause,
-                color: _paused ? const Color.fromARGB(255, 201, 148, 148) : Colors.white,
+                color: _paused
+                    ? const Color.fromARGB(255, 201, 148, 148)
+                    : Colors.white,
               ),
               onTap: () {
                 if (!_paused) {
@@ -160,7 +175,6 @@ class _GamePageState extends State<GamePage> {
     );
   }
 //
-
 
 // Functions
   void _startGame() {
@@ -314,7 +328,9 @@ class _GamePageState extends State<GamePage> {
     }
   }
 
-  void _moveGhost(int ghost, String ghostLast, Function(int, String) updateState, {bool dontFollow = false}) {
+  void _moveGhost(
+      int ghost, String ghostLast, Function(int, String) updateState,
+      {bool dontFollow = false}) {
     Random random = Random();
     String newGhostLast = ghostLast;
     int newGhost = ghost;
@@ -388,7 +404,8 @@ class _GamePageState extends State<GamePage> {
 
       // Hareket etmek icin mumkun yönlerden birini sec
       if (possibleDirections.isNotEmpty) {
-        newGhostLast = possibleDirections[random.nextInt(possibleDirections.length)];
+        newGhostLast =
+            possibleDirections[random.nextInt(possibleDirections.length)];
       }
 
       switch (newGhostLast) {
@@ -422,5 +439,4 @@ class _GamePageState extends State<GamePage> {
     updateState(newGhost, newGhostLast);
   }
 //
-
 }
