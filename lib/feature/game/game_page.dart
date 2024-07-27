@@ -10,6 +10,7 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
+
 class _GamePageState extends State<GamePage> {
   static const int _numberInRow = 11;
   final int _numberOfSquares = _numberInRow * 18;
