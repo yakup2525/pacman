@@ -14,15 +14,21 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   late GameCubit gameCubit;
+  late double _mapWidth;
 
   @override
   void initState() {
     gameCubit = BlocProvider.of<GameCubit>(context);
-    gameCubit.mapWidth =
-        (MediaQuery.of(context).size.height * 6 / 7 - 19) / 18 * 11;
 
     gameCubit.gameInitial();
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _mapWidth = (MediaQuery.of(context).size.height * 6 / 7 - 19) / 18 * 11;
   }
 
   @override
@@ -63,7 +69,7 @@ class _GamePageState extends State<GamePage> {
     return Expanded(
       flex: 6,
       child: SizedBox(
-        width: gameCubit.mapWidth,
+        width: _mapWidth,
         child: GestureDetector(
           onVerticalDragUpdate: (details) {
             if (details.delta.dy > 0) {

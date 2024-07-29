@@ -10,8 +10,6 @@ final class GameCubit extends BaseCubit<AppState> {
 
   final int numberOfSquares = AppConstants.numberInRow * 18;
 
-  late double mapWidth;
-
   int player = AppConstants.numberInRow * 14 + 1;
   int ghost = AppConstants.numberInRow * 2 - 2;
   int ghost2 = AppConstants.numberInRow * 9 - 8;
