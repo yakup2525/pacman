@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pacman/feature/game/cubit/_cubit.dart';
 import '/core/core.dart';
 import '/feature/feature.dart';
 import 'dart:async';
@@ -43,11 +45,29 @@ class _GamePageState extends State<GamePage> {
     return SafeArea(
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Column(
-          children: [
-            _gameMap(context),
-            _dashboard(),
-          ],
+        body: BlocBuilder<GameCubit, AppState>(
+          builder: (context, state) {
+            if (state is InitialState) {
+              return const SizedBox();
+            } else if (state is LoadingState) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            } else if (state is SuccessState) {
+              return Column(
+                children: [
+                  _gameMap(context),
+                  _dashboard(),
+                ],
+              );
+            } else if (state is ErrorState) {
+              return const Center(
+                child: Text('Error'),
+              );
+            } else {
+              return const SizedBox();
+            }
+          },
         ),
       ),
     );
