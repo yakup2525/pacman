@@ -34,9 +34,14 @@ class _GamePageState extends State<GamePage> {
 
   List<int> _barriers = Level1.barriers;
 
+  late GameCubit gameCubit;
+
   @override
   void initState() {
     _mapWidth = (MediaQuery.of(context).size.height * 6 / 7 - 19) / 18 * 11;
+
+    gameCubit = BlocProvider.of<GameCubit>(context);
+    gameCubit.gameStart();
     super.initState();
   }
 
