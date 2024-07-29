@@ -1,1 +1,1 @@
-export 'game_page.dart';
+export 'page/game_page.dart';
