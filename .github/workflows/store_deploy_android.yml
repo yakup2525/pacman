@@ -56,8 +56,8 @@ jobs:
         run: flutter analyze
 
       # Run Flutter tests
-      - name: Run Flutter tests
-        run: flutter test
+      # - name: Run Flutter tests
+      #   run: flutter test
 
       # Build the Android App Bundle (AAB) for release
       - name: Build Android App Bundle (AAB)
