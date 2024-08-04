@@ -15,7 +15,7 @@ jobs:
       KEYSTORE_PATH: android/upload-keystore.jks
       KEY_PROPS_PATH: android/key.properties
       SERVICE_ACCOUNT_PATH: service_account.json
-      PACKAGE_NAME: com.wolftrail.ghost_runner # Replace with your actual package name
+      PACKAGE_NAME: com.ghost_runner # Replace with your actual package name
 
     steps:
       # Checkout the code from the repository
