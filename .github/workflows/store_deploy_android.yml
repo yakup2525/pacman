@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JAVA_VERSION: 12
-      FLUTTER_VERSION: 3.13.1
+      FLUTTER_VERSION: 3.4.3
       AAB_PATH: build/app/outputs/bundle/release/app-release.aab
       KEYSTORE_PATH: android/upload-keystore.jks
       KEY_PROPS_PATH: android/key.properties
