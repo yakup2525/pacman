@@ -1,116 +1,29 @@
-# ## Github Actions CI workflow to deploy to Internal testing in the Play Store
-# name: CI_STORE_DEPLOY_ANDROID
-
-# on:
-#   # Run this workflow when any new code is pushed into the main branch
-#   push:
-#     branches: [main]
-
-# jobs:
-#   store_deploy_android:
-#     # Only run this job if the branch name starts with 'release/'
-#     if:  startsWith(github.head_ref, 'release/')
-#     name: android store release
-#     runs-on: ubuntu-latest
-#     env:
-#       # Setup env variables that will be used throughout the workflow
-#       JAVA_VERSION: 12.0
-#       FLUTTER_VERSION: 3.13.1
-#       AAB_PATH: build/app/outputs/bundle/release/app-release.aab
-#       KEYSTORE_PATH: android/upload-keystore.jks
-#       KEY_PROPS_PATH: android/key.properties
-#       SERVICE_ACCOUNT_PATH: store_credentials.json
-#     steps:
-#       # Checkout repository codebase
-#       - name: Checkout the code
-#         uses: actions/checkout@v3
-
-#       # Setup Java in the VM
-#       - name: Setup Java to compile the Android project
-#         uses: actions/setup-java@v2
-#         with:
-#           distribution: 'zulu'
-#           java-version: ${{ env.JAVA_VERSION }}
-      
-#       # Setup Flutter in the VM
-#       - name: Setup Flutter
-#         uses: subosito/flutter-action@v2
-#         with:
-#           flutter-version: ${{ env.FLUTTER_VERSION }}
-
-#       # Decode Android env variables
-#       - name: Decode Android keystore
-#         run: echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > ${{ env.KEYSTORE_PATH }}
-
-#       - name: Decode Android key properties
-#         run: echo "${{ secrets.ANDROID_KEY_PROPERTIES }}" | base64 --decode > ${{ env.KEY_PROPS_PATH }}
-
-#       # Decode Android release Service Account
-#       - name: Decode Android Service Account
-#         run: echo "${{ secrets.PRODUCTION_CREDENTIAL_FILE }}" | base64 --decode > ${{ env.SERVICE_ACCOUNT_PATH }}
-
-#       # Run flutter commands
-#       - name: Run flutter pub get
-#         run: flutter pub get
-
-#       - name: 📦 Install dependencies
-#         run: flutter pub get
-
-#       - name: 🕵️ Analyze to check for bad Dart/Flutter practices
-#         run: flutter analyze
-
-#       - name: 📉 Run all app tests
-#         run: flutter test
-
-#       # Build Android Bundle release file
-#       - name: Build aab
-#         run: |
-#           flutter build appbundle 
-#           --release
-
-#       # Upload generated aab to project artifacts
-#       - name: Upload generated aab to the artifacts
-#         uses: actions/upload-artifact@master
-#         with:
-#           name: aab-stores
-#           path: {{ env.AAB_PATH }}
-
-#       # Deploy bundle to Google Play internal testing
-#       - name: Deploy to Play Store (Internal testing)
-#         uses: r0adkll/upload-google-play@v1
-#         with:
-#           serviceAccountJson: {{ env.SERVICE_ACCOUNT_PATH }}
-#           packageName: com.wolftrail.ghost_runner
-#           releaseFiles: {{ env.AAB_PATH }}
-#           track: internal
 name: CI_STORE_DEPLOY_ANDROID
 
 on:
-  # Trigger this workflow on pushes to the main branch
   push:
     branches: [main]
 
 jobs:
   store_deploy_android:
-    # Only run this job if the branch name starts with 'release/'
-    if: startsWith(github.head_ref, 'release/')
-    name: android store release
+    name: Android Store Release
     runs-on: ubuntu-latest
     env:
-      # Setup environment variables for the workflow
-      JAVA_VERSION: 12.0
+      JAVA_VERSION: 12
       FLUTTER_VERSION: 3.13.1
       AAB_PATH: build/app/outputs/bundle/release/app-release.aab
       KEYSTORE_PATH: android/upload-keystore.jks
       KEY_PROPS_PATH: android/key.properties
       SERVICE_ACCOUNT_PATH: store_credentials.json
+      PACKAGE_NAME: com.wolftrail.ghost_runner # Replace with your actual package name
+
     steps:
       # Checkout the code from the repository
       - name: Checkout the code
         uses: actions/checkout@v3
 
       # Set up Java to build the Android project
-      - name: Setup Java to compile the Android project
+      - name: Setup Java
         uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
@@ -135,35 +48,38 @@ jobs:
         run: echo "${{ secrets.PRODUCTION_CREDENTIAL_FILE }}" | base64 --decode > ${{ env.SERVICE_ACCOUNT_PATH }}
 
       # Install Flutter dependencies
-      - name: Run flutter pub get
+      - name: Install Flutter dependencies
         run: flutter pub get
 
       # Analyze Flutter project to check for issues
-      - name: 🕵️ Analyze to check for bad Dart/Flutter practices
+      - name: Analyze Flutter project
         run: flutter analyze
 
       # Run Flutter tests
-      - name: 📉 Run all app tests
+      - name: Run Flutter tests
         run: flutter test
 
       # Build the Android App Bundle (AAB) for release
-      - name: Build aab
+      - name: Build Android App Bundle (AAB)
         run: |
           flutter build appbundle \
-            --release
+            --release \
+            --build-name=${{ github.run_number }} \
+            --build-number=${{ github.run_number }}
 
       # Upload the generated AAB file as an artifact for later use
-      - name: Upload generated aab to the artifacts
+      - name: Upload generated AAB as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: aab-stores
+          name: android-aab
           path: ${{ env.AAB_PATH }}
 
       # Deploy the app bundle to Google Play's internal testing track
-      - name: Deploy to Play Store (Internal testing)
+      - name: Deploy to Google Play Store (Internal testing)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ env.SERVICE_ACCOUNT_PATH }}
-          packageName: com.wolftrail.ghost_runner
+          packageName: ${{ env.PACKAGE_NAME }}
           releaseFiles: ${{ env.AAB_PATH }}
           track: internal
+          status: completed
