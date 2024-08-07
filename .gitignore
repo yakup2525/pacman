@@ -10,11 +10,21 @@
 .svn/
 migrate_working_dir/
 
+#for actions
+keyPropsBase64
+keystoreBase64
+pubspec.lock
+*.base64
+service-account.json
+
 # IntelliJ related
 *.iml
 *.ipr
 *.iws
 .idea/
+.properties
+.jks
+
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
