@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       JAVA_VERSION: 12
-      FLUTTER_VERSION: 3.22.2
+      FLUTTER_VERSION: 3.24
       AAB_PATH: build/app/outputs/bundle/release/app-release.aab
       KEYSTORE_PATH: android/upload-keystore.jks
       KEY_PROPS_PATH: android/key.properties
@@ -59,6 +59,40 @@ jobs:
       # - name: Run Flutter tests
       #   run: flutter test
 
+
+ # Update version and build number in pubspec.yaml
+      - name: Update version and build number
+        run: |
+          # Extract current version and build number
+          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g')
+          echo "Current version: $CURRENT_VERSION"
+
+          # Split version and build number
+          VERSION_PART=$(echo $CURRENT_VERSION | cut -d '+' -f 1)
+          BUILD_NUMBER_PART=$(echo $CURRENT_VERSION | cut -d '+' -f 2)
+
+          # Increment build number
+          NEW_BUILD_NUMBER=$((BUILD_NUMBER_PART + 1))
+          echo "New build number: $NEW_BUILD_NUMBER"
+
+          # Update pubspec.yaml with new build number
+          sed -i "s/^version: .*/version: $VERSION_PART+$NEW_BUILD_NUMBER/" pubspec.yaml
+
+          # Display updated version
+          UPDATED_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //g')
+          echo "Updated version: $UPDATED_VERSION"
+
+      # Commit updated version
+      - name: Commit updated version
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pubspec.yaml
+          git commit -m "Bump version to ${{ steps.update_version.outputs.new_version }}"
+          git push origin HEAD:${{ github.ref }}
+
+
+
       # Build the Android App Bundle (AAB) for release
       - name: Build Android App Bundle (AAB)
         run: |
@@ -75,11 +109,11 @@ jobs:
           path: ${{ env.AAB_PATH }}
 
       # Deploy the app bundle to Google Play's internal testing track
-      - name: Deploy to Google Play Store (Internal testing)
+      - name: Deploy to Google Play Store (Production)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJson: ${{ env.SERVICE_ACCOUNT_PATH }}
           packageName: ${{ env.PACKAGE_NAME }}
           releaseFiles: ${{ env.AAB_PATH }}
-          track: internal
+          track: production
           status: completed
