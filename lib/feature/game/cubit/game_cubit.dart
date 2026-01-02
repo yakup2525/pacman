@@ -10,10 +10,14 @@ final class GameCubit extends BaseCubit<AppState> {
 
   final int numberOfSquares = AppConstants.numberInRow * 18;
 
-  int player = AppConstants.numberInRow * 14 + 1;
-  int ghost = AppConstants.numberInRow * 2 - 2;
-  int ghost2 = AppConstants.numberInRow * 9 - 8;
-  int ghost3 = AppConstants.numberInRow * 11 - 2;
+  // Level management
+  int currentLevel = 1;
+  bool portalOpen = false;
+
+  int player = Level1.playerStartPosition;
+  int ghost = Level1.ghost1StartPosition;
+  int ghost2 = Level1.ghost2StartPosition;
+  int ghost3 = Level1.ghost3StartPosition;
   bool preGame = true;
   bool mouthClosed = false;
   int score = 0;
@@ -24,7 +28,7 @@ final class GameCubit extends BaseCubit<AppState> {
   String ghostLast2 = "left";
   String ghostLast3 = "down";
 
-  List<int> barriers = Level1.barriers;
+  List<int> barriers = List.from(Level1.barriers);
 
   void gameInitial() {
     safeEmit(const SuccessState());
@@ -33,6 +37,30 @@ final class GameCubit extends BaseCubit<AppState> {
   void setGame() {
     safeEmit(const InitialState());
     safeEmit(const SuccessState());
+  }
+
+  void changeToNextLevel() {
+    if (currentLevel < 3) {
+      currentLevel++;
+      _resetGameForLevelChange();
+    }
+  }
+
+  void changeToPreviousLevel() {
+    if (currentLevel > 1) {
+      currentLevel--;
+      _resetGameForLevelChange();
+    }
+  }
+
+  void _resetGameForLevelChange() {
+    preGame = true;
+    portalOpen = false;
+    paused = false;
+    mouthClosed = false;
+
+    _loadLevel(currentLevel);
+    setGame();
   }
 
 // Functions
@@ -55,16 +83,12 @@ final class GameCubit extends BaseCubit<AppState> {
                   actions: [
                     MaterialButton(
                       onPressed: () {
-                        player = AppConstants.numberInRow * 14 + 1;
-                        ghost = AppConstants.numberInRow * 2 - 2;
-                        ghost2 = AppConstants.numberInRow * 9 - 1;
-                        ghost3 = AppConstants.numberInRow * 11 - 2;
+                        currentLevel = 1;
+                        portalOpen = false;
+                        _loadLevel(1);
                         paused = false;
                         preGame = false;
                         mouthClosed = false;
-                        direction = "right";
-                        food.clear();
-                        getFood();
                         score = 0;
                         Navigator.pop(context);
                         setGame();
@@ -126,6 +150,8 @@ final class GameCubit extends BaseCubit<AppState> {
           score++;
         }
 
+        _checkPortalOpening();
+
         switch (direction) {
           case "left":
             if (!paused) moveLeft();
@@ -152,10 +178,109 @@ final class GameCubit extends BaseCubit<AppState> {
     }
   }
 
+  void _checkPortalOpening() {
+    if (!portalOpen && food.isEmpty) {
+      portalOpen = true;
+      _openPortal();
+      setGame();
+    }
+  }
+
+  void _openPortal() {
+    final int portalPos;
+    switch (currentLevel) {
+      case 1:
+        portalPos = Level1.portalPosition;
+        break;
+      case 2:
+        portalPos = Level2.portalPosition;
+        break;
+      case 3:
+        portalPos = Level3.portalPosition;
+        break;
+      default:
+        portalPos = Level1.portalPosition;
+    }
+    barriers.remove(portalPos);
+  }
+
+  void _checkLevelTransition() {
+    if (portalOpen) {
+      final int portalPos;
+      switch (currentLevel) {
+        case 1:
+          portalPos = Level1.portalPosition;
+          break;
+        case 2:
+          portalPos = Level2.portalPosition;
+          break;
+        case 3:
+          portalPos = Level3.portalPosition;
+          break;
+        default:
+          portalPos = Level1.portalPosition;
+      }
+
+      if (player == portalPos) {
+        _loadNextLevel();
+      }
+    }
+  }
+
+  void _loadNextLevel() {
+    currentLevel++;
+    portalOpen = false;
+
+    _loadLevel(currentLevel);
+  }
+
+  void _loadLevel(int level) {
+    switch (level) {
+      case 1:
+        barriers = List.from(Level1.barriers);
+        player = Level1.playerStartPosition;
+        ghost = Level1.ghost1StartPosition;
+        ghost2 = Level1.ghost2StartPosition;
+        ghost3 = Level1.ghost3StartPosition;
+        break;
+      case 2:
+        barriers = List.from(Level2.barriers);
+        player = Level2.playerStartPosition;
+        ghost = Level2.ghost1StartPosition;
+        ghost2 = Level2.ghost2StartPosition;
+        ghost3 = Level2.ghost3StartPosition;
+        break;
+      case 3:
+        barriers = List.from(Level3.barriers);
+        player = Level3.playerStartPosition;
+        ghost = Level3.ghost1StartPosition;
+        ghost2 = Level3.ghost2StartPosition;
+        ghost3 = Level3.ghost3StartPosition;
+        break;
+      default:
+        // Level 2'den sonra tekrar level 1'e dön veya oyunu bitir
+        barriers = List.from(Level1.barriers);
+        player = Level1.playerStartPosition;
+        ghost = Level1.ghost1StartPosition;
+        ghost2 = Level1.ghost2StartPosition;
+        ghost3 = Level1.ghost3StartPosition;
+        currentLevel = 1;
+    }
+
+    direction = "right";
+    ghostLast = "left";
+    ghostLast2 = "left";
+    ghostLast3 = "down";
+
+    food.clear();
+    getFood();
+    setGame();
+  }
+
   void moveLeft() {
     if (!barriers.contains(player - 1)) {
       player--;
-
+      _checkLevelTransition();
       setGame();
     }
   }
@@ -163,7 +288,7 @@ final class GameCubit extends BaseCubit<AppState> {
   void moveRight() {
     if (!barriers.contains(player + 1)) {
       player++;
-
+      _checkLevelTransition();
       setGame();
     }
   }
@@ -171,7 +296,7 @@ final class GameCubit extends BaseCubit<AppState> {
   void moveUp() {
     if (!barriers.contains(player - AppConstants.numberInRow)) {
       player -= AppConstants.numberInRow;
-
+      _checkLevelTransition();
       setGame();
     }
   }
@@ -179,7 +304,7 @@ final class GameCubit extends BaseCubit<AppState> {
   void moveDown() {
     if (!barriers.contains(player + AppConstants.numberInRow)) {
       player += AppConstants.numberInRow;
-
+      _checkLevelTransition();
       setGame();
     }
   }

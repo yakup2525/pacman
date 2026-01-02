@@ -47,6 +47,7 @@ class _GamePageState extends State<GamePage> {
             } else if (state is SuccessState) {
               return Column(
                 children: [
+                  _levelIndicator(),
                   _gameMap(context),
                   _dashboard(),
                 ],
@@ -65,6 +66,101 @@ class _GamePageState extends State<GamePage> {
   }
 
 //UI
+  Widget _levelIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () {
+              gameCubit.changeToPreviousLevel();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.arrow_back_ios,
+                color: gameCubit.currentLevel > 1
+                    ? Colors.white
+                    : Colors.grey.shade700,
+                size: 24,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            "LEVEL ${gameCubit.currentLevel}",
+            style: const TextStyle(
+              color: Colors.yellow,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(width: 16),
+          GestureDetector(
+            onTap: () {
+              gameCubit.changeToNextLevel();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Icons.arrow_forward_ios,
+                color: gameCubit.currentLevel < 3
+                    ? Colors.white
+                    : Colors.grey.shade700,
+                size: 24,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isPortal(int index) {
+    if (!gameCubit.portalOpen) return false;
+
+    final int portalPos;
+    switch (gameCubit.currentLevel) {
+      case 1:
+        portalPos = Level1.portalPosition;
+        break;
+      case 2:
+        portalPos = Level2.portalPosition;
+        break;
+      case 3:
+        portalPos = Level3.portalPosition;
+        break;
+      default:
+        portalPos = Level1.portalPosition;
+    }
+
+    return index == portalPos;
+  }
+
+  Widget _buildPortal() {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            Colors.purple.shade300,
+            Colors.blue.shade400,
+            Colors.cyan.shade300,
+          ],
+        ),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.stars,
+          color: Colors.white,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
   Widget _gameMap(BuildContext context) {
     return Expanded(
       flex: 6,
@@ -130,6 +226,8 @@ class _GamePageState extends State<GamePage> {
                 return Barrier(
                   barrierColor: Colors.blue.shade800,
                 );
+              } else if (_isPortal(index)) {
+                return _buildPortal();
               } else if (gameCubit.preGame || gameCubit.food.contains(index)) {
                 return const Path(
                   innerColor: Colors.yellow,

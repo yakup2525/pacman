@@ -1,14 +1,17 @@
 import '/core/core.dart';
 
-final class Level1 {
-  static const int levelNumber = 1;
+final class Level2 {
+  static const int levelNumber = 2;
 
   static const int playerStartPosition = AppConstants.numberInRow * 14 + 1;
-  static const int ghost1StartPosition = AppConstants.numberInRow * 2 - 2;
-  static const int ghost2StartPosition = AppConstants.numberInRow * 9 - 8;
-  static const int ghost3StartPosition = AppConstants.numberInRow * 11 - 2;
 
-  // Portal açılacak pozisyon (21 numaralı bariyer)
+  // Oynanabilirlik için hayaletleri bağlantılı koridorlara koydum
+  static const int ghost1StartPosition = AppConstants.numberInRow * 8 + 5; // 93
+  static const int ghost2StartPosition =
+      AppConstants.numberInRow * 10 + 3; // 113
+  static const int ghost3StartPosition =
+      AppConstants.numberInRow * 12 + 7; // 139
+
   static const int portalPosition = 21;
 
   static const List<int> barriers = [
@@ -39,13 +42,12 @@ final class Level1 {
     43,
     44,
     46,
-    47,
     48,
     50,
     52,
     54,
     55,
-    61,
+    63,
     65,
     66,
     68,
@@ -55,40 +57,32 @@ final class Level1 {
     74,
     76,
     77,
-    79,
-    85,
     87,
     88,
     90,
-    92,
-    93,
-    94,
     96,
     98,
     99,
     101,
     103,
-    104,
-    105,
-    107,
     109,
     110,
-    112,
+    114,
+    115,
+    116,
+    117,
     120,
     121,
     123,
     125,
-    126,
-    127,
-    129,
     131,
     132,
-    140,
+    136,
+    137,
+    138,
     142,
     143,
     145,
-    146,
-    148,
     149,
     151,
     153,
@@ -98,9 +92,7 @@ final class Level1 {
     164,
     165,
     167,
-    168,
     169,
-    170,
     172,
     173,
     175,

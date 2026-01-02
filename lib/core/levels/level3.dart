@@ -1,14 +1,17 @@
 import '/core/core.dart';
 
-final class Level1 {
-  static const int levelNumber = 1;
+final class Level3 {
+  static const int levelNumber = 3;
 
   static const int playerStartPosition = AppConstants.numberInRow * 14 + 1;
-  static const int ghost1StartPosition = AppConstants.numberInRow * 2 - 2;
-  static const int ghost2StartPosition = AppConstants.numberInRow * 9 - 8;
-  static const int ghost3StartPosition = AppConstants.numberInRow * 11 - 2;
 
-  // Portal açılacak pozisyon (21 numaralı bariyer)
+  // Oynanabilirlik için hayaletleri bağlantılı koridorlara koydum
+  static const int ghost1StartPosition = AppConstants.numberInRow * 8 + 5; // 93
+  static const int ghost2StartPosition =
+      AppConstants.numberInRow * 10 + 3; // 113
+  static const int ghost3StartPosition =
+      AppConstants.numberInRow * 12 + 7; // 139
+
   static const int portalPosition = 21;
 
   static const List<int> barriers = [
@@ -24,84 +27,77 @@ final class Level1 {
     9,
     10,
     11,
-    15,
     21,
     22,
     24,
+    25,
     26,
-    28,
+    27,
+    29,
     30,
     32,
     33,
-    35,
-    39,
+    40,
     41,
     43,
     44,
     46,
     47,
-    48,
-    50,
-    52,
+    49,
     54,
     55,
-    61,
+    60,
+    62,
+    63,
     65,
     66,
     68,
     69,
-    70,
-    72,
+    71,
     74,
     76,
     77,
-    79,
     85,
     87,
     88,
     90,
+    91,
     92,
     93,
     94,
-    96,
     98,
     99,
     101,
-    103,
-    104,
-    105,
     107,
     109,
     110,
     112,
+    114,
+    116,
+    118,
     120,
     121,
-    123,
     125,
-    126,
     127,
     129,
     131,
     132,
-    140,
+    134,
+    135,
+    136,
+    138,
     142,
     143,
-    145,
-    146,
-    148,
     149,
-    151,
     153,
     154,
+    157,
     159,
+    160,
     162,
     164,
     165,
-    167,
     168,
-    169,
-    170,
-    172,
     173,
     175,
     176,
@@ -116,6 +112,6 @@ final class Level1 {
     194,
     195,
     196,
-    197,
+    197
   ];
 }
