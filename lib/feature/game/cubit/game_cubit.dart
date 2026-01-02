@@ -30,6 +30,11 @@ final class GameCubit extends BaseCubit<AppState> {
 
   List<int> barriers = List.from(Level1.barriers);
 
+  // Timers
+  Timer? _gameOverTimer;
+  Timer? _ghostTimer;
+  Timer? _playerTimer;
+
   void gameInitial() {
     safeEmit(const SuccessState());
   }
@@ -37,6 +42,22 @@ final class GameCubit extends BaseCubit<AppState> {
   void setGame() {
     safeEmit(const InitialState());
     safeEmit(const SuccessState());
+  }
+
+  void _stopAllTimers() {
+    _gameOverTimer?.cancel();
+    _ghostTimer?.cancel();
+    _playerTimer?.cancel();
+    _gameOverTimer = null;
+    _ghostTimer = null;
+    _playerTimer = null;
+    debugPrint('⏹️ All timers stopped');
+  }
+
+  @override
+  Future<void> close() {
+    _stopAllTimers();
+    return super.close();
   }
 
   void changeToNextLevel() {
@@ -54,6 +75,7 @@ final class GameCubit extends BaseCubit<AppState> {
   }
 
   void _resetGameForLevelChange() {
+    _stopAllTimers();
     preGame = true;
     portalOpen = false;
     paused = false;
@@ -66,10 +88,13 @@ final class GameCubit extends BaseCubit<AppState> {
 // Functions
   void startGame(BuildContext context) {
     if (preGame) {
+      _stopAllTimers(); // Mevcut timer'ları durdur
       preGame = false;
+      food.clear();
       getFood();
 
-      Timer.periodic(const Duration(milliseconds: 10), (timer) {
+      _gameOverTimer =
+          Timer.periodic(const Duration(milliseconds: 10), (timer) {
         if (player == ghost || player == ghost2 || player == ghost3) {
           player = -1;
           setGame();
@@ -83,13 +108,14 @@ final class GameCubit extends BaseCubit<AppState> {
                   actions: [
                     MaterialButton(
                       onPressed: () {
+                        _stopAllTimers();
                         currentLevel = 1;
                         portalOpen = false;
-                        _loadLevel(1);
                         paused = false;
-                        preGame = false;
+                        preGame = true;
                         mouthClosed = false;
                         score = 0;
+                        _loadLevel(1);
                         Navigator.pop(context);
                         setGame();
                       },
@@ -118,7 +144,7 @@ final class GameCubit extends BaseCubit<AppState> {
               });
         }
       });
-      Timer.periodic(const Duration(milliseconds: 190), (timer) {
+      _ghostTimer = Timer.periodic(const Duration(milliseconds: 190), (timer) {
         if (!paused) {
           moveGhost(ghost, ghostLast, (newGhost, newGhostlast) {
             ghost = newGhost;
@@ -137,7 +163,7 @@ final class GameCubit extends BaseCubit<AppState> {
           }, dontFollow: true);
         }
       });
-      Timer.periodic(const Duration(milliseconds: 170), (timer) {
+      _playerTimer = Timer.periodic(const Duration(milliseconds: 170), (timer) {
         mouthClosed = !mouthClosed;
 
         setGame();
@@ -176,12 +202,16 @@ final class GameCubit extends BaseCubit<AppState> {
         food.add(i);
       }
     }
+    debugPrint(
+        '🍕 Food initialized: ${food.length} items for Level $currentLevel');
   }
 
   void _checkPortalOpening() {
     if (!portalOpen && food.isEmpty) {
       portalOpen = true;
       _openPortal();
+      debugPrint(
+          '🌟 Portal OPENED at position 21! All food collected! Level: $currentLevel');
       setGame();
     }
   }
@@ -230,7 +260,7 @@ final class GameCubit extends BaseCubit<AppState> {
   void _loadNextLevel() {
     currentLevel++;
     portalOpen = false;
-
+    debugPrint('🎮 Loading LEVEL $currentLevel...');
     _loadLevel(currentLevel);
   }
 
@@ -258,7 +288,7 @@ final class GameCubit extends BaseCubit<AppState> {
         ghost3 = Level3.ghost3StartPosition;
         break;
       default:
-        // Level 2'den sonra tekrar level 1'e dön veya oyunu bitir
+        // Level 3'ten sonra tekrar level 1'e dön (döngü)
         barriers = List.from(Level1.barriers);
         player = Level1.playerStartPosition;
         ghost = Level1.ghost1StartPosition;

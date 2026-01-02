@@ -5,8 +5,8 @@ final class Level3 {
 
   static const int playerStartPosition = AppConstants.numberInRow * 14 + 1;
 
-  // Oynanabilirlik için hayaletleri bağlantılı koridorlara koydum
-  static const int ghost1StartPosition = AppConstants.numberInRow * 8 + 5; // 93
+  // Hayaletleri bariyerlere denk gelmeyecek şekilde yerleştirdim
+  static const int ghost1StartPosition = AppConstants.numberInRow * 8 + 7; // 95
   static const int ghost2StartPosition =
       AppConstants.numberInRow * 10 + 3; // 113
   static const int ghost3StartPosition =
