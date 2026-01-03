@@ -61,7 +61,7 @@ final class GameCubit extends BaseCubit<AppState> {
   }
 
   void changeToNextLevel() {
-    if (currentLevel < 3) {
+    if (currentLevel < 4) {
       currentLevel++;
       _resetGameForLevelChange();
     }
@@ -228,6 +228,9 @@ final class GameCubit extends BaseCubit<AppState> {
       case 3:
         portalPos = Level3.portalPosition;
         break;
+      case 4:
+        portalPos = Level4.portalPosition;
+        break;
       default:
         portalPos = Level1.portalPosition;
     }
@@ -246,6 +249,9 @@ final class GameCubit extends BaseCubit<AppState> {
           break;
         case 3:
           portalPos = Level3.portalPosition;
+          break;
+        case 4:
+          portalPos = Level4.portalPosition;
           break;
         default:
           portalPos = Level1.portalPosition;
@@ -287,8 +293,15 @@ final class GameCubit extends BaseCubit<AppState> {
         ghost2 = Level3.ghost2StartPosition;
         ghost3 = Level3.ghost3StartPosition;
         break;
+      case 4:
+        barriers = List.from(Level4.barriers);
+        player = Level4.playerStartPosition;
+        ghost = Level4.ghost1StartPosition;
+        ghost2 = Level4.ghost2StartPosition;
+        ghost3 = Level4.ghost3StartPosition;
+        break;
       default:
-        // Level 3'ten sonra tekrar level 1'e dön (döngü)
+        // Level 4'ten sonra tekrar level 1'e dön (döngü)
         barriers = List.from(Level1.barriers);
         player = Level1.playerStartPosition;
         ghost = Level1.ghost1StartPosition;
