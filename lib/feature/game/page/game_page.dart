@@ -47,7 +47,7 @@ class _GamePageState extends State<GamePage> {
             } else if (state is SuccessState) {
               return Column(
                 children: [
-                  _levelIndicator(),
+                  // _levelIndicator(),
                   _gameMap(context),
                   _dashboard(),
                 ],
