@@ -66,6 +66,8 @@ class _GamePageState extends State<GamePage> {
   }
 
 //UI
+
+  // ignore: unused_element
   Widget _levelIndicator() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
