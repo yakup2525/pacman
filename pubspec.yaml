@@ -19,6 +19,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_bloc: ^8.1.4
   equatable: ^2.0.5
+  marionette_flutter: ^0.2.3
   
 dev_dependencies:
   flutter_test:
