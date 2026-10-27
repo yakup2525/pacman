@@ -3,14 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pacman/main.dart';
 
 void main() {
-  testWidgets('game controls remain visible inside Android system insets',
-      (tester) async {
+  testWidgets('game controls remain visible inside Android system insets', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1290, 2400);
     tester.view.devicePixelRatio = 3;
     tester.view.padding = FakeViewPadding(top: 90, bottom: 72);
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp(initializeServices: false));
     await tester.pumpAndSettle();
 
     final play = find.text('P L A Y');

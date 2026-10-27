@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '/core/core.dart';
+import '/core/monetization/monetization_service.dart';
 
 final class GameCubit extends BaseCubit<AppState> {
   GameCubit() : super(const InitialState());
@@ -18,10 +19,24 @@ final class GameCubit extends BaseCubit<AppState> {
   int ghost = Level1.ghost1StartPosition;
   int ghost2 = Level1.ghost2StartPosition;
   int ghost3 = Level1.ghost3StartPosition;
+  final Stopwatch activeRun = Stopwatch();
+  bool restarting = false;
+  bool _paused = false;
+  bool get paused => _paused;
+  set paused(bool value) {
+    _paused = value;
+    if (value) {
+      activeRun.stop();
+    } else if (!preGame) {
+      activeRun.start();
+    }
+    setGame();
+  }
+
   bool preGame = true;
   bool mouthClosed = false;
   int score = 0;
-  bool paused = false;
+
   final List<int> food = [];
   String direction = "right";
   String ghostLast = "left";
@@ -85,29 +100,48 @@ final class GameCubit extends BaseCubit<AppState> {
     setGame();
   }
 
-// Functions
+  // Functions
   void startGame(BuildContext context) {
     if (preGame) {
       _stopAllTimers(); // Mevcut timer'ları durdur
       preGame = false;
+      activeRun.reset();
+      activeRun.start();
       food.clear();
       getFood();
 
-      _gameOverTimer =
-          Timer.periodic(const Duration(milliseconds: 10), (timer) {
-        if (player == ghost || player == ghost2 || player == ghost3) {
+      _gameOverTimer = Timer.periodic(const Duration(milliseconds: 10), (
+        timer,
+      ) {
+        if (!paused &&
+            (player == ghost || player == ghost2 || player == ghost3)) {
+          _stopAllTimers();
+          activeRun.stop();
           player = -1;
           setGame();
           showDialog(
-              barrierDismissible: false,
-              context: context,
-              builder: (BuildContext context) {
-                return AlertDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (BuildContext context) {
+              return PopScope(
+                canPop: false,
+                child: AlertDialog(
                   title: const Center(child: Text("Game Over!")),
                   content: Text("Your Score :  $score"),
                   actions: [
                     MaterialButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        if (restarting) return;
+                        restarting = true;
+                        try {
+                          await MonetizationService.instance.postRun(
+                            activeRun.elapsed,
+                          );
+                        } catch (_) {
+                          /* A failed ad must never prevent restart. */
+                        }
+                        restarting = false;
+                        if (!context.mounted || isClosed) return;
                         _stopAllTimers();
                         currentLevel = 1;
                         portalOpen = false;
@@ -133,15 +167,18 @@ final class GameCubit extends BaseCubit<AppState> {
                           ),
                         ),
                         child: const Center(
-                            child: Text(
-                          'Restart',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        )),
+                          child: Text(
+                            'Restart',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
                       ),
-                    )
+                    ),
                   ],
-                );
-              });
+                ),
+              );
+            },
+          );
         }
       });
       _ghostTimer = Timer.periodic(const Duration(milliseconds: 190), (timer) {
@@ -203,7 +240,8 @@ final class GameCubit extends BaseCubit<AppState> {
       }
     }
     debugPrint(
-        '🍕 Food initialized: ${food.length} items for Level $currentLevel');
+      '🍕 Food initialized: ${food.length} items for Level $currentLevel',
+    );
   }
 
   void _checkPortalOpening() {
@@ -211,7 +249,8 @@ final class GameCubit extends BaseCubit<AppState> {
       portalOpen = true;
       _openPortal();
       debugPrint(
-          '🌟 Portal OPENED at position 21! All food collected! Level: $currentLevel');
+        '🌟 Portal OPENED at position 21! All food collected! Level: $currentLevel',
+      );
       setGame();
     }
   }
@@ -352,8 +391,12 @@ final class GameCubit extends BaseCubit<AppState> {
     }
   }
 
-  void moveGhost(int ghost, String ghostLast, Function(int, String) updateState,
-      {bool dontFollow = false}) {
+  void moveGhost(
+    int ghost,
+    String ghostLast,
+    Function(int, String) updateState, {
+    bool dontFollow = false,
+  }) {
     Random random = Random();
     String newGhostLast = ghostLast;
     int newGhost = ghost;
@@ -462,5 +505,5 @@ final class GameCubit extends BaseCubit<AppState> {
     updateState(newGhost, newGhostLast);
   }
 
-//
+  //
 }

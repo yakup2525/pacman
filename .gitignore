@@ -57,3 +57,13 @@ app.*.map.json
 
 # Local deploy outputs
 /deploy/
+
+# Private signing and deployment credentials
+**/key.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+**/service-account*.json
+.env
+.env.*

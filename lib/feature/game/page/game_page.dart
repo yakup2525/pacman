@@ -4,6 +4,9 @@ import 'package:pacman/feature/game/cubit/_cubit.dart';
 import '/core/core.dart';
 import '/feature/feature.dart';
 import 'dart:math';
+import 'package:url_launcher/url_launcher.dart';
+import '/core/monetization/monetization_service.dart';
+import '/core/update/update_service.dart';
 
 class GamePage extends StatefulWidget {
   const GamePage({super.key});
@@ -12,7 +15,7 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   late GameCubit gameCubit;
   late double _mapWidth;
 
@@ -20,8 +23,102 @@ class _GamePageState extends State<GamePage> {
   void initState() {
     gameCubit = BlocProvider.of<GameCubit>(context);
 
+    WidgetsBinding.instance.addObserver(this);
+    MonetizationService.instance.addListener(_privacyChanged);
     gameCubit.gameInitial();
     super.initState();
+  }
+
+  void _privacyChanged() {
+    if (MonetizationService.instance.privacyUiActive && !gameCubit.preGame) {
+      gameCubit.paused = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    MonetizationService.instance.removeListener(_privacyChanged);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final resumed = state == AppLifecycleState.resumed;
+    MonetizationService.instance.foreground = resumed;
+    if (!resumed && !gameCubit.preGame) gameCubit.paused = true;
+    if (resumed) {
+      MonetizationService.instance.preload();
+      if (gameCubit.preGame) {
+        MonetizationService.instance.retryConsentIfNeeded();
+      }
+    }
+  }
+
+  Future<void> _settings() async {
+    if (!gameCubit.preGame) gameCubit.paused = true;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Settings & privacy'),
+        content: ListenableBuilder(
+          listenable: MonetizationService.instance,
+          builder: (_, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('Privacy Policy'),
+                onTap: () async {
+                  var opened = false;
+                  try {
+                    opened = await launchUrl(
+                      Uri.parse(privacyPolicyUrl),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  } catch (_) {
+                    /* Report failure. */
+                  }
+                  if (!opened && dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Could not open the policy. Please try again.',
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
+              if (MonetizationService.instance.privacyRequired)
+                ListTile(
+                  leading: const Icon(Icons.tune),
+                  title: const Text('Privacy Choices'),
+                  onTap: () async {
+                    final success = await MonetizationService.instance
+                        .privacyChoices();
+                    if (!success && dialogContext.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Privacy choices are unavailable. Please try again.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -41,9 +138,7 @@ class _GamePageState extends State<GamePage> {
             if (state is InitialState) {
               return const SizedBox();
             } else if (state is LoadingState) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             } else if (state is SuccessState) {
               return Column(
                 children: [
@@ -53,9 +148,7 @@ class _GamePageState extends State<GamePage> {
                 ],
               );
             } else if (state is ErrorState) {
-              return const Center(
-                child: Text('Error'),
-              );
+              return const Center(child: Text('Error'));
             } else {
               return const SizedBox();
             }
@@ -65,7 +158,7 @@ class _GamePageState extends State<GamePage> {
     );
   }
 
-//UI
+  //UI
 
   // ignore: unused_element
   Widget _levelIndicator() {
@@ -154,11 +247,7 @@ class _GamePageState extends State<GamePage> {
         ),
       ),
       child: const Center(
-        child: Icon(
-          Icons.stars,
-          color: Colors.white,
-          size: 20,
-        ),
+        child: Icon(Icons.stars, color: Colors.white, size: 20),
       ),
     );
   }
@@ -194,15 +283,14 @@ class _GamePageState extends State<GamePage> {
               if (gameCubit.mouthClosed && gameCubit.player == index) {
                 return Container(
                   decoration: const BoxDecoration(
-                      color: Colors.yellow, shape: BoxShape.circle),
+                    color: Colors.yellow,
+                    shape: BoxShape.circle,
+                  ),
                 );
               } else if (gameCubit.player == index) {
                 switch (gameCubit.direction) {
                   case "left":
-                    return Transform.rotate(
-                      angle: pi,
-                      child: const MyPlayer(),
-                    );
+                    return Transform.rotate(angle: pi, child: const MyPlayer());
                   case "right":
                     return const MyPlayer();
                   case "up":
@@ -225,9 +313,7 @@ class _GamePageState extends State<GamePage> {
               } else if (gameCubit.ghost3 == index) {
                 return const YellowGhost();
               } else if (gameCubit.barriers.contains(index)) {
-                return Barrier(
-                  barrierColor: Colors.blue.shade800,
-                );
+                return Barrier(barrierColor: Colors.blue.shade800);
               } else if (_isPortal(index)) {
                 return _buildPortal();
               } else if (gameCubit.preGame || gameCubit.food.contains(index)) {
@@ -256,30 +342,43 @@ class _GamePageState extends State<GamePage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Text(
-              " Score : ${gameCubit.score}",
-              style: const TextStyle(color: Colors.white, fontSize: 23),
+            IconButton(
+              tooltip: "Settings & privacy",
+              onPressed: _settings,
+              icon: const Icon(Icons.settings, color: Colors.white),
             ),
-            GestureDetector(
-              onTap: () {
-                gameCubit.startGame(context);
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  "Score: ${gameCubit.score}",
+                  style: const TextStyle(color: Colors.white, fontSize: 23),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                if (!MonetizationService.instance.privacyUiActive) {
+                  gameCubit.startGame(context);
+                }
               },
-              child: const Text("P L A Y",
-                  style: TextStyle(color: Colors.white, fontSize: 23)),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(80, 48),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("P L A Y", style: TextStyle(fontSize: 23)),
             ),
-            GestureDetector(
-              child: Icon(
+            IconButton(
+              tooltip: gameCubit.paused ? 'Resume game' : 'Pause game',
+              icon: Icon(
                 gameCubit.paused ? Icons.play_arrow : Icons.pause,
                 color: gameCubit.paused
                     ? const Color.fromARGB(255, 201, 148, 148)
                     : Colors.white,
               ),
-              onTap: () {
-                if (!gameCubit.paused) {
-                  gameCubit.paused = true;
-                } else {
-                  gameCubit.paused = false;
-                }
+              onPressed: () {
+                if (MonetizationService.instance.privacyUiActive) return;
+                gameCubit.paused = !gameCubit.paused;
               },
             ),
           ],
@@ -287,5 +386,6 @@ class _GamePageState extends State<GamePage> {
       ),
     );
   }
-//
+
+  //
 }

@@ -25,11 +25,12 @@ android {
 
     defaultConfig {
         applicationId = "com.wolftrail.ghost_runner"
-        minSdk = flutter.minSdkVersion
+        minSdk = 24
         // Keep the Play policy target explicit, independent of the local Flutter SDK.
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-9384489712257906~8867551244"
     }
 
     signingConfigs {
@@ -43,6 +44,7 @@ android {
 
     buildTypes {
         release {
+            manifestPlaceholders["admobAppId"] = "ca-app-pub-9384489712257906~8867551244"
             signingConfig = signingConfigs.getByName("release")
         }
     }
