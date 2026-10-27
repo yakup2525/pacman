@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.wolftrail.ghost_runner"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -26,7 +26,8 @@ android {
     defaultConfig {
         applicationId = "com.wolftrail.ghost_runner"
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Keep the Play policy target explicit, independent of the local Flutter SDK.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
