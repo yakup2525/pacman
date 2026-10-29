@@ -46,6 +46,10 @@ android {
         release {
             manifestPlaceholders["admobAppId"] = "ca-app-pub-9384489712257906~8867551244"
             signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
