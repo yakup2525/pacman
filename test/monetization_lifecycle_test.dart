@@ -73,6 +73,29 @@ void main() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(umpChannel, null);
   });
 
+  for (final group in [AgeGroup.teen, AgeGroup.adult]) {
+    testWidgets('all eligible requests are nonpersonalized: ${group.name}', (
+      tester,
+    ) async {
+      final service = MonetizationService();
+      service.selectAge(group);
+      consent.updates.single();
+      await tester.pump();
+      final load = ads.singleWhere(
+        (call) => call.method == 'loadInterstitialAd',
+      );
+      expect(
+        (load.arguments as Map)['request'],
+        isA<AdRequest>().having(
+          (request) => request.nonPersonalizedAds,
+          'nonPersonalizedAds',
+          isTrue,
+        ),
+      );
+      await tester.pump(const Duration(seconds: 16));
+    });
+  }
+
   testWidgets('unknown and under16 never access UMP or Mobile Ads', (
     tester,
   ) async {

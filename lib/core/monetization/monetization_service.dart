@@ -262,7 +262,7 @@ class MonetizationService extends ChangeNotifier {
     try {
       InterstitialAd.load(
         adUnitId: _unit,
-        request: AdRequest(nonPersonalizedAds: _age == AgeGroup.teen),
+        request: const AdRequest(nonPersonalizedAds: true),
         adLoadCallback: InterstitialAdLoadCallback(
           onAdLoaded: (ad) {
             _loading = false;
