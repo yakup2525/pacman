@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:google_mobile_ads/src/ad_instance_manager.dart';
-import 'package:pacman/core/monetization/age_gate.dart';
 import 'package:pacman/core/monetization/monetization_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,6 +16,7 @@ class FakeConsent extends ConsentInformation {
     OnConsentInfoUpdateFailureListener failure,
   ) {
     expect(params.consentDebugSettings, isNull);
+    expect(params.tagForUnderAgeOfConsent, isNull);
     updates.add(success);
   }
 
@@ -73,56 +73,20 @@ void main() {
     binding.defaultBinaryMessenger.setMockMethodCallHandler(umpChannel, null);
   });
 
-  for (final group in [AgeGroup.teen, AgeGroup.adult]) {
-    testWidgets('all eligible requests are nonpersonalized: ${group.name}', (
-      tester,
-    ) async {
-      final service = MonetizationService();
-      service.selectAge(group);
-      consent.updates.single();
-      await tester.pump();
-      final load = ads.singleWhere(
-        (call) => call.method == 'loadInterstitialAd',
-      );
-      expect(
-        (load.arguments as Map)['request'],
-        isA<AdRequest>().having(
-          (request) => request.nonPersonalizedAds,
-          'nonPersonalizedAds',
-          isTrue,
-        ),
-      );
-      await tester.pump(const Duration(seconds: 16));
-    });
-  }
-
-  testWidgets('unknown and under16 never access UMP or Mobile Ads', (
+  testWidgets('general requests retain G rating and NPA without stored age', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({'age_group': 'under16'});
     final service = MonetizationService();
     await service.start();
-    service.selectAge(AgeGroup.under16);
-    await service.start();
-    expect(await service.privacyChoices(), isFalse);
-    service.retryConsentIfNeeded();
-    service.preload();
-    await service.postRun(const Duration(minutes: 3));
-    await tester.pump();
-    expect(consent.updates, isEmpty);
-    expect(ump, isEmpty);
-    expect(ads, isEmpty);
-  });
-
-  testWidgets('late consent callbacks cannot affect a younger age selection', (
-    tester,
-  ) async {
-    final service = MonetizationService();
-    service.selectAge(AgeGroup.adult);
-    service.selectAge(AgeGroup.under16);
+    expect(
+      (await SharedPreferences.getInstance()).containsKey('age_group'),
+      isFalse,
+    );
     consent.updates.single();
     await tester.pump();
-    expect(ump, isEmpty);
-    expect(ads, isEmpty);
+    final load = ads.singleWhere((call) => call.method == 'loadInterstitialAd');
+    expect((load.arguments['request'] as AdRequest).nonPersonalizedAds, isTrue);
     await tester.pump(const Duration(seconds: 16));
   });
 
@@ -130,9 +94,10 @@ void main() {
     tester,
   ) async {
     final service = MonetizationService();
-    service.selectAge(AgeGroup.teen);
+    await service.start();
     await tester.pump(const Duration(seconds: 16));
     service.retryConsentIfNeeded();
+    await tester.pump();
     expect(consent.updates, hasLength(2));
     consent.updates.first();
     await tester.pump();
@@ -145,7 +110,7 @@ void main() {
     );
     expect(
       configuration.arguments['ageRestrictedTreatment'],
-      AgeRestrictedTreatment.teen.index,
+      AgeRestrictedTreatment.unspecified.index,
     );
     expect(configuration.arguments['maxAdContentRating'], MaxAdContentRating.g);
     final load = ads.singleWhere((c) => c.method == 'loadInterstitialAd');
@@ -161,7 +126,7 @@ void main() {
     tester,
   ) async {
     final service = MonetizationService();
-    service.selectAge(AgeGroup.adult);
+    await service.start();
     service.foreground = false;
     consent.updates.single();
     await tester.pump();
@@ -169,36 +134,31 @@ void main() {
     expect(ads, isEmpty);
     service.foreground = true;
     service.retryConsentIfNeeded();
+    await tester.pump();
     expect(consent.updates, hasLength(2));
     await tester.pump(const Duration(seconds: 16));
   });
 
   testWidgets(
-    'age or mandatory update revocation during permission check prevents initialization',
+    'mandatory update during permission check prevents initialization',
     (tester) async {
-      for (final younger in [true, false]) {
-        final service = MonetizationService();
-        consent.permission = Completer<bool>();
-        service.selectAge(AgeGroup.adult);
-        consent.updates.last();
-        await tester.pump();
-        if (younger) {
-          service.selectAge(AgeGroup.under16);
-        } else {
-          service.blocked = true;
-        }
-        consent.permission!.complete(true);
-        await tester.pump();
-        expect(ads, isEmpty);
-        await tester.pump(const Duration(seconds: 16));
-      }
+      final service = MonetizationService();
+      consent.permission = Completer<bool>();
+      await service.start();
+      consent.updates.single();
+      await tester.pump();
+      service.blocked = true;
+      consent.permission!.complete(true);
+      await tester.pump();
+      expect(ads, isEmpty);
+      await tester.pump(const Duration(seconds: 16));
     },
   );
   testWidgets(
     'revoking privacy while final show permission is pending prevents fullscreen',
     (tester) async {
       final service = MonetizationService();
-      service.selectAge(AgeGroup.teen);
+      await service.start();
       consent.updates.single();
       await tester.pump();
       final load = ads.singleWhere((c) => c.method == 'loadInterstitialAd');
@@ -226,13 +186,13 @@ void main() {
     'an ad loaded before privacy revocation is discarded after callback',
     (tester) async {
       final service = MonetizationService();
-      service.selectAge(AgeGroup.adult);
+      await service.start();
       consent.updates.single();
       await tester.pump();
       final load = ads.singleWhere((c) => c.method == 'loadInterstitialAd');
       final ad =
           instanceManager.adFor(load.arguments['adId'])! as InterstitialAd;
-      service.selectAge(AgeGroup.under16);
+      service.blocked = true;
       ad.adLoadCallback.onAdLoaded(ad);
       await tester.pump();
       expect(ads.where((c) => c.method == 'disposeAd'), hasLength(1));
@@ -244,7 +204,7 @@ void main() {
     'privacy timeout never unlocks another form while native UI may remain',
     (tester) async {
       final service = MonetizationService();
-      service.selectAge(AgeGroup.adult);
+      await service.start();
       consent.updates.single();
       await tester.pump();
       final nativeDismissal = Completer<void>();

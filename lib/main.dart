@@ -6,7 +6,6 @@ import 'package:pacman/feature/game/cubit/_cubit.dart';
 
 import 'feature/feature.dart';
 import 'core/monetization/monetization_service.dart';
-import 'core/monetization/age_gate.dart';
 import 'core/update/update_service.dart';
 import 'core/update/update_gate.dart';
 
@@ -39,6 +38,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       WidgetsBinding.instance.addObserver(this);
       updates.addListener(_updateChanged);
       updates.check();
+      MonetizationService.instance.start();
     }
   }
 
@@ -77,14 +77,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       home: BlocProvider.value(
         value: game,
         child: widget.initializeServices
-            ? UpdateGate(
-                service: updates,
-                child: AgeGate(
-                  onSelected: (group) =>
-                      MonetizationService.instance.selectAge(group),
-                  child: const GamePage(),
-                ),
-              )
+            ? UpdateGate(service: updates, child: const GamePage())
             : const GamePage(),
       ),
     );

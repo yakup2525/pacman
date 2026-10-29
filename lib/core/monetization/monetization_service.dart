@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'ad_pacing.dart';
-import 'age_gate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MonetizationService extends ChangeNotifier {
@@ -21,8 +20,6 @@ class MonetizationService extends ChangeNotifier {
   bool fullscreen = false;
   bool privacyRequired = false;
   bool foreground = true;
-  AgeGroup? _age;
-  bool get _ageEligible => _age != null && _age != AgeGroup.under16;
   bool _blocked = false;
   set blocked(bool value) {
     _blocked = value;
@@ -37,21 +34,9 @@ class MonetizationService extends ChangeNotifier {
     _loadedAt = null;
   }
 
-  void selectAge(AgeGroup group) {
-    if (_age == group) {
-      retryConsentIfNeeded();
-      return;
-    }
-    _consentGeneration++;
-    _consentBusy = false;
-    _invalidateAds();
-    privacyRequired = false;
-    _age = group;
-    if (_ageEligible) start();
-  }
-
   bool privacyUiActive = false;
   bool _historyLoaded = false;
+  bool _legacyAgeCleared = false;
   int _consentGeneration = 0;
   int _adGeneration = 0;
 
@@ -98,15 +83,20 @@ class MonetizationService extends ChangeNotifier {
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   Future<void> start() async {
-    if (!supported ||
-        !_ageEligible ||
-        _blocked ||
-        !foreground ||
-        _consentBusy ||
-        fullscreen) {
+    if (!supported || _blocked || !foreground || _consentBusy || fullscreen) {
       return;
     }
     _consentBusy = true;
+    // Discard legacy local age routing; this release does not ask or store age.
+    if (!_legacyAgeCleared) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('age_group');
+        _legacyAgeCleared = true;
+      } catch (_) {
+        // Storage failure never blocks gameplay or regional consent.
+      }
+    }
     _invalidateAds();
     final generation = ++_consentGeneration;
     // An unanswered network request cannot disable ads/retries forever.
@@ -118,9 +108,9 @@ class MonetizationService extends ChangeNotifier {
     });
     try {
       ConsentInformation.instance.requestConsentInfoUpdate(
-        ConsentRequestParameters(tagForUnderAgeOfConsent: false),
+        ConsentRequestParameters(),
         () async {
-          if (generation != _consentGeneration || !_ageEligible) return;
+          if (generation != _consentGeneration) return;
           if (!foreground || _blocked) {
             _consentBusy = false;
             return;
@@ -158,7 +148,7 @@ class MonetizationService extends ChangeNotifier {
   }
 
   Future<void> _refresh(int generation) async {
-    bool current() => generation == _consentGeneration && _ageEligible;
+    bool current() => generation == _consentGeneration;
     try {
       if (!current()) return;
       final requirement =
@@ -179,9 +169,7 @@ class MonetizationService extends ChangeNotifier {
       await MobileAds.instance.updateRequestConfiguration(
         RequestConfiguration(
           maxAdContentRating: MaxAdContentRating.g,
-          ageRestrictedTreatment: _age == AgeGroup.teen
-              ? AgeRestrictedTreatment.teen
-              : AgeRestrictedTreatment.unspecified,
+          ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
         ),
       );
       if (!current() || _blocked || !foreground) return;
@@ -197,11 +185,7 @@ class MonetizationService extends ChangeNotifier {
   }
 
   Future<bool> privacyChoices() async {
-    if (!supported ||
-        !_ageEligible ||
-        fullscreen ||
-        _consentBusy ||
-        !foreground) {
+    if (!supported || fullscreen || _consentBusy || !foreground) {
       return false;
     }
     _consentBusy = true;
@@ -248,7 +232,6 @@ class MonetizationService extends ChangeNotifier {
 
   void preload() {
     if (!_initialized ||
-        !_ageEligible ||
         _blocked ||
         !_allowed ||
         _consentBusy ||
@@ -267,7 +250,6 @@ class MonetizationService extends ChangeNotifier {
           onAdLoaded: (ad) {
             _loading = false;
             if (generation != _adGeneration ||
-                !_ageEligible ||
                 _blocked ||
                 !_allowed ||
                 _consentBusy) {
@@ -311,7 +293,6 @@ class MonetizationService extends ChangeNotifier {
     if (!await ConsentInformation.instance.canRequestAds() ||
         generation != _adGeneration ||
         !identical(ad, _ad) ||
-        !_ageEligible ||
         _blocked ||
         !_allowed ||
         _consentBusy ||
